@@ -1,1 +1,1 @@
-#!/usr/bin/env -S wasmtime nm_c.wasm
+#!/usr/bin/env -S ./wasmtime nm_c.wasm
