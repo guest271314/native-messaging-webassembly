@@ -1,5 +1,3 @@
-
-
 // Native Messaging host C
 // https://stackoverflow.com/q/64400254
 // https://gist.github.com/zed/4459378be67a4b37f53430e0703cb700
