@@ -26,6 +26,9 @@ uint8_t* getMessage(size_t *inputLength) {
   // `message[0]`).
   // `sizeof(*message)` will hence return the size in bytes of the type 
   // `message` points at, which means it's equivalent to `sizeof(uint_8)`.
+  // To ensure that the message ends with a null terminator
+  // rather than whatever garbage is left over after the allocated buffer add
+  // 1 to the message length when allocating the message buffer.
   uint8_t *message = calloc(messageLength+1, sizeof(*message));
   result = fread(message, sizeof(*message), messageLength, stdin);
   // `inputLength` is a pointer, so we store the length at the memory address it 
