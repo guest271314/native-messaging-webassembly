@@ -1,5 +1,6 @@
 #!/bin/bash
 # https://www.reddit.com/r/bash/comments/10i09se/comment/j5blsrw/
+# https://github.com/bytecodealliance/wasmtime/issues/3715#issuecomment-1399308863
 
 script='
 (module
