@@ -29,4 +29,5 @@ javy compile nm_javy.js -o nm_javy.wasm
 The Native Messaging host echoes back the message passed. 
 
 
-This is FOSS. If you think a license is necessary consider WTFPLv2 https://en.wikipedia.org/wiki/WTFPL applicable.
+# License
+Do What the Fuck You Want to Public License [WTFPLv2](http://www.wtfpl.net/about/)
