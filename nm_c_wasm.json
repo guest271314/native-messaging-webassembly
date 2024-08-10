@@ -1,5 +1,5 @@
 {
-  "name": "nm_c_wasm",
+  "name": "nm_wasm",
   "description": "WebAssembly Native Messaging host",
   "path": "",
   "type": "stdio",
