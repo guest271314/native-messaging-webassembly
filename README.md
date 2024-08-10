@@ -1,4 +1,4 @@
-WebAssembly C Native Messaging host
+WebAssembly Native Messaging host
 
 Installation and usage on Chrome and Chromium
 
