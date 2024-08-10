@@ -15,6 +15,14 @@ or compile `nm_javy.js` to WASM using [`javy`](https://github.com/bytecodeallian
 javy compile nm_javy.js -o nm_javy.wasm
 ```
 
+Optionally optimize with 
+
+```
+wasmtime compile --optimize opt-level=s nm_javy.wasm
+```
+
+and adjust the path in `nm_javy_wasm.sh` to `nm_javy.cwasm`
+
 2. Download and save `wasmtime` executable to the extension directory.
 3. Navigate to `chrome://extensions`.
 4. Toggle `Developer mode`.
