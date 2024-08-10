@@ -1,6 +1,6 @@
 {
   "name": "nm-c-webassembly",
-  "short_name": "nm_c_wasm",
+  "short_name": "nm_wasm",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": ["nativeMessaging"],
