@@ -12,7 +12,7 @@ $ /path/to/wasi-sdk-19.0/bin/clang nm_c.c -o nm_c.wasm
 or compile `nm_javy.js` to WASM using [`javy`](https://github.com/bytecodealliance/javy) 
 
 ```
-javy build nm_javy.js -o nm_javy.wasm
+javy build -J simd-json-builtins nm_javy.js -o nm_javy.wasm
 ```
 
 Optionally optimize with 
