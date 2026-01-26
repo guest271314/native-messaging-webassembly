@@ -2,7 +2,6 @@ const stdin = 0;
 const stdout = 1;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
-const maxMessageLengthFromHost = 209715;
 
 function getMessage() {
   let offset = 0;
