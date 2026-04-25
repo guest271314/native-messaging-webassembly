@@ -78,6 +78,11 @@ const hosts = {
     "compile":
       "javy build -C source=omitted -J simd-json-builtins -o nm_javy.wasm nm_javy.js",
   },
+  "nm_javy_node_wasi": {
+    "i": "nm_javy.js",
+    "description": "Javy Node.js WASI Native Messaging host",
+    "compile": "javy emit-plugin -o javy_plugin.wasm && javy build -C dynamic -C plugin=javy_plugin.wasm -o nm_javy_node_wasi.wasm nm_javy.js"
+  },
   "nm_rust_wasi": {
     "i": "nm_rust.rs",
     "description": "Rust WASI Native Messaging host",
@@ -105,10 +110,16 @@ for (const [nativeHost, { compile, description, i }] of Object.entries(hosts)) {
   console.log(nativeHost);
   host.name = nativeHost;
   host.description = description;
-  host.path = `${dirname}/${host.name}.sh`;
+  host.path = `${dirname}/${host.name}${host.name === "nm_javy_node_wasi" ? ".js" : ".sh"}`;
   host.type = "stdio";
   host.allowed_origins = [];
   host.allowed_origins.push(`chrome-extension://${id}/`);
+  // Include other/additional extension ID's inhost manifest
+  // host.allowed_origins.push(
+  //  `chrome-extension://${await generateIdForPath(
+  //    `${dirname.slice(0, dirname.lastIndexOf("/"))}/tab`,
+  //  )}/`,
+  // );
 
   const { resolve, promise } = Promise.withResolvers();
   exec(compile, (error, stdout, stderr) => {
@@ -122,13 +133,15 @@ for (const [nativeHost, { compile, description, i }] of Object.entries(hosts)) {
     resolve();
   });
   await promise;
-  const shellscript = host.name === "nm_qjs_wasi"
-    ? `#!/bin/bash
+  if (host.name !== "nm_javy_node_wasi") {
+    const shellscript = host.name === "nm_qjs_wasi"
+      ? `#!/bin/bash
 exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
-      readFileSync("./nm_qjs_wasi_min.js", "utf8")
-    }'`
-    : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
-  writeFileSync(`${host.name}.sh`, shellscript);
+        readFileSync("./nm_qjs_wasi_min.js", "utf8")
+      }'`
+      : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
+    writeFileSync(`${host.name}.sh`, shellscript);
+  }
   chmodSync(host.path, 0o764);
 
   console.log(`${host.path} set to executable.`);
