@@ -14,9 +14,12 @@ Compilers and runtimes used:
 - QuickJS NG `qjs-wasi.wasm`
 - `wasmtime`
 - `bun` for fetching packages from NPM and bundling and minifiying source code
-- `node` for `node:wasi` 
+- `node` for `node:wasi` with WebAssembly JavaScript API in `nm_javy_node_wasi.js` and passing `.wasm` file to `nm_node_wasi.js`, e.g., `node nm_node_wasi.js nm_assemblyscript.wasm`, `node nm_node_wasi.js nm_tinygo_wasi.wasm`, et al..
+  
+### Compile and install programmatically
 
-Compile programmatically, create and write Native Messaging manifests to Chromium configuration folder
+Compile all languages/libraries listed to WASM programmatically, and create and write Native Messaging manifests to Chromium configuration folder
+
 
 ```bash
 node install_hosts.js
