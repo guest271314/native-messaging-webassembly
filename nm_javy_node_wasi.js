@@ -1,16 +1,14 @@
 #!/usr/bin/env -S /home/user/bin/node
 // https://github.com/bytecodealliance/javy/blob/main/docs/docs-using-nodejs.md
-// ./javy emit-plugin -o plugin.wasm
-// ./javy build -C dynamic -C plugin=plugin.wasm -o javy_node_wasi.wasm embedded.js
-
-
+// javy emit-plugin -o javy_plugin.wasm
+// javy build -C dynamic -C plugin=javy_plugin.wasm -o nm_javy_node_wasi.wasm nm_javy.js
 import { readFile } from "node:fs/promises";
 import { WASI } from "node:wasi";
 
 try {
   const [embeddedModule, pluginModule] = await Promise.all([
-    compileModule("./embedded.wasm"),
-    compileModule("./plugin.wasm"),
+    compileModule("./nm_javy_node_wasi.wasm"),
+    compileModule("./javy_plugin.wasm"),
   ]);
   const result = await runJavy(pluginModule, embeddedModule);
 } catch (e) {
@@ -54,5 +52,5 @@ async function runJavy(pluginModule, embeddedModule) {
       }
     }
     throw e;
-  } 
+  }
 }
