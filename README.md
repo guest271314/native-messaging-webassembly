@@ -14,7 +14,8 @@ Compilers and runtimes used:
 - QuickJS NG `qjs-wasi.wasm`
 - `wasmtime`
 - `bun` for fetching packages from NPM and bundling and minifiying source code
-- `node` for `node:wasi` with WebAssembly JavaScript API in `nm_javy_node_wasi.js` and passing `.wasm` file to `nm_node_wasi.js`, e.g., `node nm_node_wasi.js nm_assemblyscript.wasm`, `node nm_node_wasi.js nm_tinygo_wasi.wasm`, et al..
+- `node` for `node:wasi` with WebAssembly JavaScript API in `nm_javy_node_wasi.js` and passing `.wasm` file to `nm_node_wasi.js`, e.g., `node nm_node_wasi.js nm_assemblyscript.wasm`, `node nm_node_wasi.js nm_tinygo_wasi.wasm`, et al.
+- `wasi.js` implements a runtime agnostic WASI Preview1 for `deno` (which currently stubs `node:wasi` module), `node`, and `bun`
   
 ### Compile and install programmatically
 
