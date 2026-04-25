@@ -1,15 +1,6 @@
+import hosts from "./hosts.json" with { type: "json" };
 async function nativeMessagingPerformanceTest(i = 10) {
-  const runtimes = new Map([
-    ["nm_assemblyscript", 0],
-    ["nm_c_wasi", 0],
-    ["nm_cpp_wasi", 0],
- //   ["nm_nodejs", 0],
-    ["nm_rust_wasi", 0],
-    ["nm_go_wasi", 0],
-    ["nm_tinygo_wasi", 0],
-    ["nm_warpo", 0],
-    ["nm_zig_wasi", 0]
-  ]);
+  const runtimes = new Map(hosts.map((host) => [host, 0]));
   for (let j = 0; j < i; j++) {
     for (const [runtime] of runtimes) {
       console.log(`${runtime} run no. ${j} of ${i}}`);
@@ -40,7 +31,7 @@ async function nativeMessagingPerformanceTest(i = 10) {
       }
     }
     await scheduler.postTask(() => {}, {
-      delay: 10
+      delay: 10,
     });
   }
   const sorted = [...runtimes].map(([k, n]) => [k, n / i]).sort((
