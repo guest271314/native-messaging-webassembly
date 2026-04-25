@@ -29,7 +29,7 @@ and adjust the path in `nm_javy_wasm.sh` to `nm_javy.cwasm`
 5. Click `Load unpacked`.
 6. Select native-messaging-webassembly folder.
 7. Note the generated extension ID.
-8. Open `nm_wasm.json` in a text editor, set `"path"` to absolute path of `nm_c_wasm.sh`, `nm_c_wat.sh`, or `nm_javy_wasm.sh` and `chrome-extension://<ID>/` using ID from 7 in `"allowed_origins"` array. 
+8. Open `nm_wasm.json` in a text editor, set `"path"` to absolute path of `nm_c_wasm.sh`, `nm_c_wat.sh`, or `nm_javy_wasm.sh` and `chrome-extension://<ID>/` using ID from 7 in `"allowed_origins"` array. And/or run `<node|deno -A|bun> install_hosts.js`.
 9. Copy the file to Chrome or Chromium configuration folder, e.g., Chromium on \*nix `~/.config/chromium/NativeMessagingHosts`; Chrome dev channel on \*nix `~/.config/google-chrome-unstable/NativeMessagingHosts`.
 10. Make sure `*.sh` files are executable executable; for WAT embedded in `nm_c_wat.sh` we use `kill_wasmtime.sh` to terminate `wasmtime` using polling of `nm_c_wat.sh` because process substitution keeps `wasmtime` running after the Native Messaging host is disconnected and exits.
 11. To test click `service worker` link in panel of unpacked extension which is DevTools for `background.js` in MV3 `ServiceWorker`, observe echo'ed message from WASI Native Messaging host. To disconnect run `port.disconnect()`.
