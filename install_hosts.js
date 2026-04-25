@@ -11,7 +11,7 @@ if (args.startsWith("--runtime=")) {
   runtime = args.split("=").at(-1);
 }
 
-const manifest = JSON.parse(decoder.decode(readFileSync("manifest.json")));
+// const manifest = JSON.parse(decoder.decode(readFileSync("manifest.json")));
 
 // Generate Chrome extension ID
 // https://stackoverflow.com/questions/26053434
@@ -94,11 +94,11 @@ const hosts = {
     "i": "nm_qjs_wasi.js",
     "description": "QuickJS WASI Native Messaging host",
     "compile":
-      `bun -e 'await fetch("https://github.com/quickjs-ng/quickjs/releases/latest/download/qjs-wasi.wasm").then(async (r) => [r.headers.get("content-disposition").match(/(?<=filename=).+$/)[0], await r.bytes()]).then(async ([filename, file]) => await Bun.write(filename, file)).catch((e) => {throw e})' && bun build --minify --outfile=nm_qjs_wasi_min.js nm_qjs_wasi.js`,
+      `bun -e 'await fetch("https://github.com/quickjs-ng/quickjs/releases/latest/download/qjs-wasi.wasm").then(async(r)=> [r.headers.get("content-disposition").match(/(?<=filename=).+$/)[0], await r.bytes()]).then(async([filename,file])=>await Bun.write(filename,file))' && bun build --minify --outfile=nm_qjs_wasi_min.js nm_qjs_wasi.js`,
   },
 };
 
-writeFileSync("hosts.json", JSON.stringify(Object.keys(hosts), null, 2));
+writeFileSync("hosts.json", JSON.stringify(Object.keys(hosts)));
 
 for (const [nativeHost, { compile, description, i }] of Object.entries(hosts)) {
   const host = {};
@@ -110,13 +110,6 @@ for (const [nativeHost, { compile, description, i }] of Object.entries(hosts)) {
   host.allowed_origins = [];
   host.allowed_origins.push(`chrome-extension://${id}/`);
 
-  const shellscript = host.name === "nm_qjs_wasi"
-    ? `#!/bin/bash
-exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
-      readFileSync("./nm_qjs_wasi_min.js", "utf8")
-    }'`
-    : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
-  writeFileSync(`${host.name}.sh`, shellscript);
   const { resolve, promise } = Promise.withResolvers();
   exec(compile, (error, stdout, stderr) => {
     if (error) {
@@ -129,6 +122,13 @@ exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -
     resolve();
   });
   await promise;
+  const shellscript = host.name === "nm_qjs_wasi"
+    ? `#!/bin/bash
+exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
+      readFileSync("./nm_qjs_wasi_min.js", "utf8")
+    }'`
+    : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
+  writeFileSync(`${host.name}.sh`, shellscript);
   chmodSync(host.path, 0o764);
 
   console.log(`${host.path} set to executable.`);
