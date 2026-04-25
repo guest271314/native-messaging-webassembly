@@ -57,7 +57,7 @@ async function runJavy(pluginModule, embeddedModule) {
     wasi.memory = pluginInstance.exports.memory;
     //console.log(instance.exports, pluginInstance.exports); process.exit();
     // Javy plugin is a WASI reactor see https://github.com/WebAssembly/WASI/blob/main/legacy/application-abi.md?plain=1
-    // Bun's "node:wasi" module doesn't have an `initialize` method
+    // Bun's "node:wasi" module doesn't have an `initialize` method, even though documentation says it does
     // https://bun.com/reference/node/wasi
     wasi.initialize ??= wasi?.start;
     wasi.initialize?.(pluginInstance);
