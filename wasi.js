@@ -1,10 +1,12 @@
 // Modified deno-wasi implementation for Deno, Bun, Node.js
-// https://github.com/guest271314/deno-wasi/blob/master/mod.ts
+// https://github.com/caspervonb/deno-wasi
+// https://github.com/guest271314/deno-wasi/tree/runtime-agnostic-nodejs-api
 // deno-fmt-ignore-file
 // deno-lint-ignore-file
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 import * as process from "node:process";
 import fs from "node:fs";
+import * as crypto from "node:crypto";
 // https://github.com/nodejs/node/issues/11568#issuecomment-282765300
 process.stdout?._handle?.setBlocking?.(true);
 process.stdin?._handle?.setBlocking?.(true);
@@ -319,15 +321,15 @@ class Module {
     this.memory = options?.memory;
     this.fds = [{
         type: FILETYPE_CHARACTER_DEVICE,
-        handle: process.stdin
+        handle: options?.stdin ? { fd: options.stdin } : process.stdin
       },
       {
         type: FILETYPE_CHARACTER_DEVICE,
-        handle: process.stdout
+        handle: options?.stdout ? { fd: options.stdout } : process.stdout
       },
       {
         type: FILETYPE_CHARACTER_DEVICE,
-        handle: process.stderr
+        handle: options?.stderr ? { fd: options.stderr } : process.stderr
       }
     ];
     if (options?.preopens) {
@@ -563,10 +565,10 @@ class Module {
       },
       fd_read: (fd, iovs_ptr, iovs_len, nread_out) => {
         const entry = this.fds[fd];
-        // console.log("fd_read");
         if (!entry) {
           return ERRNO_BADF;
         }
+        //console.log(entry);
         const view = new DataView(this.memory.buffer);
         let nread = 0;
         for (let i = 0; i < iovs_len; i++) {
@@ -596,7 +598,6 @@ class Module {
         return ERRNO_SUCCESS;
       },
       fd_seek: (fd, offset, whence, newoffset_out) => {
-        // console.log("fd_seek");
         const entry = this.fds[fd];
         if (!entry) {
           return ERRNO_BADF;
@@ -629,7 +630,6 @@ class Module {
       },
       fd_write: (fd, iovs_ptr, iovs_len, nwritten_out) => {
         const entry = this.fds[fd];
-        // console.log("fd_write");
         if (!entry) {
           return ERRNO_BADF;
         }
@@ -640,7 +640,7 @@ class Module {
           iovs_ptr += 4;
           const data_len = view.getUint32(iovs_ptr, true);
           iovs_ptr += 4;
-          nwritten += fs.writeSync(entry.handle.fd, new Uint8Array(this.memory.buffer, data_ptr, data_len));
+          nwritten += fs.writeSync(entry.handle.fd || entry.handle, new Uint8Array(this.memory.buffer, data_ptr, data_len));
         }
         view.setUint32(nwritten_out, nwritten, true);
         return ERRNO_SUCCESS;
