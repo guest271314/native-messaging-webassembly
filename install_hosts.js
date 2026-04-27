@@ -41,7 +41,7 @@ const hosts = {
     "i": "nm_assemblyscript.ts",
     "description": "AssemblyScript WASI Native Messaging host",
     "compile":
-      "bun install @assemblyscript/wasi-shim@latest && bun x --bun assemblyscript@latest -Ospeed --converge --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json nm_assemblyscript.ts -o nm_assemblyscript.wasm",
+      "bun install assemblyscript@latest @assemblyscript/wasi-shim@latest && bun x --bun asc -Ospeed --converge --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json nm_assemblyscript.ts -o nm_assemblyscript.wasm",
   },
   "nm_c_wasi": {
     "i": "nm_c.c",
