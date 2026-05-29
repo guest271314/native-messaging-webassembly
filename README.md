@@ -28,6 +28,24 @@ node install_hosts.js
 
 Alternatively use `deno -A install_hosts.js` or `bun install_hosts.js`. 
 
+### Compile to Component Model
+
+See [wasi-preview1-component-adapter](https://github.com/bytecodealliance/wasmtime/tree/main/crates/wasi-preview1-component-adapter#using). E.g.,
+
+```shell
+wasm-tools component new nm_javy.wasm --adapt ~/bin/wasi_snapshot_preview1.command.wasm -o nm_javy_component.wasm
+```
+
+```shell
+wasm-tools component new nm_assemblyscript.wasm --adapt ~/bin/wasi_snapshot_preview1.command.wasm -o nm_assemblyscript_component.wasm
+```
+
+Run with
+
+```bash
+#!/usr/bin/env -S /home/user/bin/wasmtime run -W component-model=y /path/to/native-messaging-webassembly/nm_javy_component.wasm
+```
+
 ### Manual installation and usage on Chrome and Chromium
 
 1. Navigate to `chrome://extensions`.
