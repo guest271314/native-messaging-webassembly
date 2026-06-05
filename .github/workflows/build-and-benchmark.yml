@@ -118,6 +118,10 @@ jobs:
         run: ls -la *.wasm || true
 
       - name: Benchmark
+        env:
+          SIZES: "209715,13421760" # ~1 MiB and ~64 MiB (Chrome extension->host max)
+          RUNS: "3"
+          TIMEOUT: "30"
         run: |
           hosts=$(ls nm_assemblyscript.wasm nm_c_wasi.wasm nm_cpp_wasi.wasm nm_go_wasi.wasm \
                      nm_tinygo_wasi.wasm nm_warpo.wasm nm_javy.wasm nm_rust_wasi.wasm \
