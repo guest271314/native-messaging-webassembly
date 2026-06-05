@@ -140,21 +140,20 @@ jobs:
             bench.txt
             site/
 
-      # Optional GitHub Pages results site — opt-in: set an Actions variable
-      # DEPLOY_PAGES=true and enable Pages (build source: GitHub Actions). Off by
-      # default, so the deploy job just skips and CI stays green.
+      # GitHub Pages results site. Deploy by default only from the upstream main
+      # branch, so forks can run CI without publishing Pages.
       - name: Configure Pages
-        if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
+        if: github.repository == 'guest271314/native-messaging-webassembly' && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
-        if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
+        if: github.repository == 'guest271314/native-messaging-webassembly' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy-pages:
     needs: build-and-benchmark
-    if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
+    if: github.repository == 'guest271314/native-messaging-webassembly' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
