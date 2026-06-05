@@ -16,7 +16,7 @@
 // element count round-trips (sum of array lengths === N).
 
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const [wasmtime, ...hosts] = process.argv.slice(2);
 if (!wasmtime || hosts.length === 0) {
@@ -149,6 +149,70 @@ console.log(
   `\nNative Messaging host benchmark — N=${N} (~${(body.length / 1048576).toFixed(2)} MiB JSON), best of ${RUNS}\n`,
 );
 console.table(rows);
+
+// Static results page for GitHub Pages (site/index.html + machine-readable results.json).
+mkdirSync("site", { recursive: true });
+const generated = new Date().toISOString();
+const cols = [
+  "host",
+  "wall(s)",
+  "peak(MB)",
+  "frames",
+  "elems",
+  "validJSON",
+  "match(N)",
+];
+const tbody = rows
+  .map((r) => {
+    const cells = cols
+      .map((k) => {
+        const cls =
+          k === "host"
+            ? "host"
+            : k === "validJSON" || k === "match(N)"
+              ? r[k]
+                ? "ok"
+                : "bad"
+              : "";
+        return `<td class="${cls}">${r[k]}</td>`;
+      })
+      .join("");
+    return `<tr>${cells}</tr>`;
+  })
+  .join("\n");
+const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Native Messaging WASI host benchmark</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 system-ui, -apple-system, sans-serif; max-width: 840px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.4rem; margin-bottom: .25rem; }
+  code { background: #8881; padding: .1em .35em; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 1.25rem 0; }
+  th, td { padding: .4rem .65rem; text-align: right; border-bottom: 1px solid #8884; }
+  th:first-child, td.host { text-align: left; font-weight: 600; }
+  thead th { border-bottom: 2px solid #8888; }
+  td.ok { color: #2a9d6a; } td.bad { color: #d6455d; font-weight: 700; }
+  .meta { color: #8889; font-size: .88rem; }
+</style></head><body>
+<h1>Native Messaging WASI host benchmark</h1>
+<p>Each host is sent a Chrome Native Messaging frame (4-byte LE length + UTF-8 JSON) carrying
+<code>Array(${N})</code> (~${(body.length / 1048576).toFixed(2)} MiB) over stdin under wasmtime; the echoed frames
+are validated as JSON and the round-trip is timed. Headless equivalent of the <code>connectNative</code>
+benchmark in <code>test_wasi.js</code>. Lower <code>wall(s)</code> is faster; best of ${RUNS} runs.</p>
+<table><thead><tr>${cols.map((k) => `<th>${k}</th>`).join("")}</tr></thead>
+<tbody>
+${tbody}
+</tbody></table>
+<p class="meta">Generated ${generated} by <code>ci/benchmark.mjs</code> · sorted fastest first.</p>
+</body></html>
+`;
+writeFileSync("site/index.html", html);
+writeFileSync(
+  "site/results.json",
+  JSON.stringify({ N, runs: RUNS, generated, rows }, null, 2),
+);
+console.log("wrote site/index.html + site/results.json");
 
 const failed = rows.filter((r) => !r["validJSON"] || !r["match(N)"]);
 if (failed.length) {
