@@ -1,0 +1,131 @@
+name: build-and-benchmark
+
+# Builds every WASI Native Messaging host in this repo (the `compile` commands
+# from install_hosts.js, with guest's custom aliases mapped to standard
+# toolchains) and runs a headless benchmark (ci/benchmark.mjs) that sends each
+# host the Array(N) JSON message from background.js over stdin under wasmtime,
+# validates the echoed JSON, and prints a sorted timing/memory table.
+#
+# Each build step is `continue-on-error` so a single missing/changed toolchain
+# does not block the others — the benchmark runs over whatever built.
+
+on:
+  push:
+    branches: [ci/build-and-benchmark]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-benchmark:
+    runs-on: ubuntu-latest
+    env:
+      WASI_SDK_VERSION: "24"
+      WASI_SDK_PATH: /opt/wasi-sdk
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- toolchains ----
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-go@v5
+        with: { go-version: "stable" }
+      - uses: acifani/setup-tinygo@v2
+        with: { tinygo-version: "0.40.0" }
+        continue-on-error: true
+      - uses: mlugg/setup-zig@v1
+        with: { version: "0.14.0" }
+        continue-on-error: true
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: wasm32-wasip1 }
+
+      - name: Install wasmtime
+        run: |
+          curl -fsSL https://github.com/bytecodealliance/wasmtime/releases/download/v45.0.0/wasmtime-v45.0.0-x86_64-linux.tar.xz | tar -xJ
+          echo "$PWD/wasmtime-v45.0.0-x86_64-linux" >> "$GITHUB_PATH"
+
+      - name: Install wasi-sdk (for C / C++)
+        continue-on-error: true
+        run: |
+          curl -fsSL "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/wasi-sdk-${WASI_SDK_VERSION}.0-x86_64-linux.tar.gz" | tar -xz
+          sudo mv "wasi-sdk-${WASI_SDK_VERSION}.0-x86_64-linux" "$WASI_SDK_PATH"
+
+      - name: Install javy
+        continue-on-error: true
+        run: |
+          url=$(curl -fsSL https://api.github.com/repos/bytecodealliance/javy/releases/latest | grep -o 'https://[^"]*javy-x86_64-linux-[^"]*\.gz' | head -1)
+          curl -fsSL "$url" -o javy.gz
+          gunzip -f javy.gz && chmod +x javy && sudo mv javy /usr/local/bin/javy
+          javy --version
+
+      # ---- build each host (compile commands from install_hosts.js) ----
+      - name: Build nm_assemblyscript
+        continue-on-error: true
+        run: |
+          bun install assemblyscript@latest @assemblyscript/wasi-shim@latest
+          bun x --bun asc -Ospeed --converge --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json nm_assemblyscript.ts -o nm_assemblyscript.wasm
+
+      - name: Build nm_c_wasi
+        continue-on-error: true
+        run: |
+          "$WASI_SDK_PATH/bin/clang" --target=wasm32-wasi --sysroot="$WASI_SDK_PATH/share/wasi-sysroot" -O3 -flto nm_c.c -o nm_c_wasi.wasm
+
+      - name: Build nm_cpp_wasi
+        continue-on-error: true
+        run: |
+          "$WASI_SDK_PATH/bin/clang++" --target=wasm32-wasi --sysroot="$WASI_SDK_PATH/share/wasi-sysroot" -std=c++2a -O3 -flto -fno-exceptions nm_cpp.cpp -o nm_cpp_wasi.wasm
+
+      - name: Build nm_go_wasi
+        continue-on-error: true
+        run: GOOS=wasip1 GOARCH=wasm go build -ldflags="-s -w" -o nm_go_wasi.wasm nm_go.go
+
+      - name: Build nm_tinygo_wasi
+        continue-on-error: true
+        run: tinygo build -opt=2 -no-debug -panic=trap -scheduler=none -target=wasip1 -o nm_tinygo_wasi.wasm nm_go.go
+
+      - name: Build nm_warpo
+        continue-on-error: true
+        run: bun x warpo --optimizeLevel=3 --host=wasi_snapshot_preview1 nm_assemblyscript.ts -o nm_warpo.wasm
+
+      - name: Build nm_javy
+        continue-on-error: true
+        run: javy build -C source=omitted -J simd-json-builtins -o nm_javy.wasm nm_javy.js
+
+      - name: Build nm_rust_wasi
+        continue-on-error: true
+        run: rustc -C opt-level=s -C lto=fat -C codegen-units=1 -C panic=abort --target=wasm32-wasip1 -o nm_rust_wasi.wasm nm_rust.rs
+
+      - name: Build nm_zig_wasi
+        continue-on-error: true
+        run: zig build-exe nm_zig.zig -O ReleaseSmall -target wasm32-wasi --name nm_zig_wasi
+
+      - name: Build nm_js2wasm
+        continue-on-error: true
+        run: |
+          bun install --trust js2wasm@latest 2>/dev/null || bun install --trust github:loopdive/js2
+          bun x js2wasm nm_js2wasm.ts --target wasi -o . || bun x --bun js2wasm nm_js2wasm.ts --target wasi -o .
+
+      # ---- benchmark ----
+      - name: List built hosts
+        run: ls -la *.wasm || true
+
+      - name: Benchmark
+        run: |
+          hosts=$(ls nm_assemblyscript.wasm nm_c_wasi.wasm nm_cpp_wasi.wasm nm_go_wasi.wasm \
+                     nm_tinygo_wasi.wasm nm_warpo.wasm nm_javy.wasm nm_rust_wasi.wasm \
+                     nm_zig_wasi.wasm nm_js2wasm.wasm 2>/dev/null || true)
+          if [ -z "$hosts" ]; then echo "No host .wasm built"; exit 1; fi
+          echo "Benchmarking: $hosts"
+          node ci/benchmark.mjs "$(command -v wasmtime)" $hosts | tee bench.txt
+          { echo '## Native Messaging host benchmark'; echo; echo '```'; cat bench.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-wasm-and-benchmark
+          path: |
+            *.wasm
+            bench.txt
