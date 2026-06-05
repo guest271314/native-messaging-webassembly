@@ -140,20 +140,21 @@ jobs:
             bench.txt
             site/
 
-      # GitHub Pages results site — fork-only (skipped if this workflow runs in
-      # another repo, e.g. an upstream PR).
+      # Optional GitHub Pages results site — opt-in: set an Actions variable
+      # DEPLOY_PAGES=true and enable Pages (build source: GitHub Actions). Off by
+      # default, so the deploy job just skips and CI stays green.
       - name: Configure Pages
-        if: github.repository == 'ttraenkler/native-messaging-webassembly' && github.ref == 'refs/heads/main'
+        if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
-        if: github.repository == 'ttraenkler/native-messaging-webassembly' && github.ref == 'refs/heads/main'
+        if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy-pages:
     needs: build-and-benchmark
-    if: github.repository == 'ttraenkler/native-messaging-webassembly' && github.ref == 'refs/heads/main'
+    if: vars.DEPLOY_PAGES == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
