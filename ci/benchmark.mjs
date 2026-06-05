@@ -1,11 +1,11 @@
 // Headless benchmark for the native-messaging WASI hosts (CI / standalone).
 //
 // For each host `.wasm` and each message size, spawn it under wasmtime, send a
-// Chrome Native Messaging frame (4-byte little-endian length + UTF-8 JSON body)
+// Native Messaging protocol frame (4-byte little-endian length + UTF-8 JSON body)
 // carrying `Array(N)` over stdin — the same payload background.js / test_wasi.js
 // send — collect the framed response(s) over stdout, time the round-trip,
 // validate the echoed JSON, and print a sorted timing/memory table per size.
-// This is the headless equivalent of the Chrome `connectNative` benchmark in
+// This is the headless equivalent of the browser extension `connectNative` benchmark in
 // test_wasi.js (which can't run in CI). It also writes a GitHub Pages results
 // site (site/index.html + site/results.json).
 //
@@ -218,10 +218,10 @@ const html = `<!doctype html>
   .meta { color: #8889; font-size: .88rem; }
 </style></head><body>
 <h1>Native Messaging WASI host benchmark</h1>
-<p>Each host is sent a Chrome Native Messaging frame (4-byte LE length + UTF-8 JSON) carrying
+<p>Each host is sent a Native Messaging protocol frame (4-byte LE length + UTF-8 JSON) carrying
 <code>Array(N)</code> over stdin under wasmtime; the echoed frames are validated as JSON and the
 round-trip is timed. Headless equivalent of the <code>connectNative</code> benchmark in
-<code>test_wasi.js</code>. Two sizes: ~1 MiB (a typical message) and ~64 MiB (Chrome's
+<code>test_wasi.js</code>. Two sizes: ~1 MiB (a typical message) and ~64 MiB (Native Messaging
 extension&rarr;host maximum). Lower <code>wall(s)</code> is faster; <code>peak(MB)</code> is the host
 process's peak RSS &mdash; at 64 MiB it separates streaming hosts (flat memory) from those that hold
 the whole body. Best of ${RUNS} runs.</p>
