@@ -105,8 +105,11 @@ jobs:
       - name: Build nm_js2wasm
         continue-on-error: true
         run: |
-          bun install --trust github:loopdive/js2
-          node ./node_modules/.bin/js2wasm nm_js2wasm.ts --target wasi -o .
+          # @loopdive/js2 ships its CLI built (dist/cli.js, gitignored), so clone
+          # and build the compiler from source rather than installing the bare repo.
+          git clone --depth 1 https://github.com/loopdive/js2 "$RUNNER_TEMP/js2"
+          (cd "$RUNNER_TEMP/js2" && bun install && bun run build)
+          node "$RUNNER_TEMP/js2/dist/cli.js" nm_js2wasm.ts --target wasi -o .
 
       # ---- benchmark ----
       - name: List built hosts
