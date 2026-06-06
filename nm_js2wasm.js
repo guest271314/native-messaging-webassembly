@@ -1,3 +1,4 @@
+// bun build ./node_modules/@loopdive/js2/examples/native-messaging/nm_js2wasm.ts --target=node --outfile=nm_js2wasm.js
 // node_modules/@loopdive/js2/examples/native-messaging/nm_js2wasm.ts
 var FRAME_CHUNK = 1024 * 1024;
 var MAX_RUN = FRAME_CHUNK - 2;
