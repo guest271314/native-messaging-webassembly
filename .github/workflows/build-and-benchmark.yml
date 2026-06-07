@@ -38,8 +38,8 @@ jobs:
       - uses: acifani/setup-tinygo@v2
         with: { tinygo-version: "0.40.0" }
         continue-on-error: true
-      - uses: mlugg/setup-zig@v1
-        with: { version: "0.15.2" }
+      - uses: mlugg/setup-zig@v2
+        with: { zig-version: 0.16.0, use-cache: false }
         continue-on-error: true
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: wasm32-wasip1 }
