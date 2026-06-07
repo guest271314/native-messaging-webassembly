@@ -7,7 +7,7 @@ Compilers and runtimes used:
 - WASI-SDK `clang` and `clang++` symlinked to `wasi-clang` and `wasi-clang++`
 - Bytecode Alliance `javy`
 - `go` and `tinygo`
-- `zig` symlinked as `zig-stable`
+- `zig`
 - `rustc` and/or `cargo`
 - `warpo`
 - `assemblyscript`/`asc` and `@assemblyscript/wasi-shim`
