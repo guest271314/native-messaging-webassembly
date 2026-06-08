@@ -41,7 +41,7 @@ const hosts = {
     "i": "nm_assemblyscript.ts",
     "description": "AssemblyScript WASI Native Messaging host",
     "compile":
-      "bun install assemblyscript@latest @assemblyscript/wasi-shim@latest && bun x --bun asc -Ospeed --converge --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json nm_assemblyscript.ts -o nm_assemblyscript.wasm",
+      "bun install assemblyscript@latest @assemblyscript/wasi-shim@latest && bun x asc -Ospeed --converge --config ./node_modules/@assemblyscript/wasi-shim/asconfig.json nm_assemblyscript.ts -o nm_assemblyscript.wasm",
   },
   "nm_c_wasi": {
     "i": "nm_c.c",
@@ -81,7 +81,17 @@ const hosts = {
   "nm_javy_node_wasi": {
     "i": "nm_javy.js",
     "description": "Javy Node.js WASI Native Messaging host",
-    "compile": "javy emit-plugin -o javy_plugin.wasm && javy build -C dynamic -C plugin=javy_plugin.wasm -o nm_javy_node_wasi.wasm nm_javy.js"
+    "compile":
+      "javy emit-plugin -o javy_plugin.wasm && javy build -C dynamic -C plugin=javy_plugin.wasm -o nm_javy_node_wasi.wasm nm_javy.js",
+  },
+  "nm_js2wasm": {
+    "i": "nm_js2wasm.js",
+    "description": "js2wasm Native Messaging host",
+    "compile": `
+       bun install --trust https://github.com/loopdive/js2 && \
+       bun build ./node_modules/@loopdive/js2/examples/native-messaging/nm_js2wasm.ts --target=node --outfile=nm_js2wasm.js && \
+       bun ./node_modules/@loopdive/js2/src/cli.ts nm_js2wasm.js --wit --target wasi -o .
+      `,
   },
   "nm_rust_wasi": {
     "i": "nm_rust.rs",
@@ -93,7 +103,7 @@ const hosts = {
     "i": "nm_zig.zig",
     "description": "Zig WASI Native Messaging host",
     "compile":
-      "zig-stable build-exe nm_zig.zig -O ReleaseSmall -target wasm32-wasi --name nm_zig_wasi",
+      "zig build-exe nm_zig.zig -O ReleaseSmall -target wasm32-wasi --name nm_zig_wasi",
   },
   "nm_qjs_wasi": {
     "i": "nm_qjs_wasi.js",
@@ -103,65 +113,105 @@ const hosts = {
   },
 };
 
-writeFileSync("hosts.json", JSON.stringify(Object.keys(hosts)));
+writeFileSync("hosts.json", JSON.stringify(Object.keys(hosts)), null, 2);
+try {
+  for (
+    const [nativeHost, { compile, description, i }] of Object.entries(hosts)
+  ) {
+    const host = {};
+    console.log(nativeHost);
+    host.name = nativeHost;
+    host.description = description;
+    host.path = `${dirname}/${host.name}${
+      host.name === "nm_javy_node_wasi" ? ".js" : ".sh"
+    }`;
+    host.type = "stdio";
+    host.allowed_origins = [];
+    host.allowed_origins.push(`chrome-extension://${id}/`);
+    host.allowed_origins.push(
+      `chrome-extension://${await generateIdForPath(
+        `${dirname.slice(0, dirname.lastIndexOf("/"))}/tab`,
+      )}/`,
+    );
 
-for (const [nativeHost, { compile, description, i }] of Object.entries(hosts)) {
-  const host = {};
-  console.log(nativeHost);
-  host.name = nativeHost;
-  host.description = description;
-  host.path = `${dirname}/${host.name}${host.name === "nm_javy_node_wasi" ? ".js" : ".sh"}`;
-  host.type = "stdio";
-  host.allowed_origins = [];
-  host.allowed_origins.push(`chrome-extension://${id}/`);
-  // Include other/additional extension ID's inhost manifest
-  // host.allowed_origins.push(
-  //  `chrome-extension://${await generateIdForPath(
-  //    `${dirname.slice(0, dirname.lastIndexOf("/"))}/tab`,
-  //  )}/`,
-  // );
+    const { resolve, promise } = Promise.withResolvers();
+    exec(compile, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec. error: ${error}`);
+        return;
+      }
+      console.log(`Successfully compiled ${i} to ${host.name}.wasm`);
+      // console.log(`stdout: ${stdout}`);
+      // console.error(`stderr: ${stderr}`);
+      resolve();
+    });
+    await promise;
 
+    if (host.name !== "nm_javy_node_wasi") {
+      const shellscript = host.name === "nm_qjs_wasi"
+        ? `#!/bin/bash
+exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
+          readFileSync("./nm_qjs_wasi_min.js", "utf8")
+        }'`
+        : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
+      writeFileSync(`${host.name}.sh`, shellscript);
+    }
+    chmodSync(host.path, 0o764);
+
+    console.log(`${host.path} set to executable.`);
+
+    writeFileSync(`${host.name}.json`, JSON.stringify(host, null, 2));
+    // https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/user_data_dir.md
+
+    const chromeUserDataDir = `${
+      dirname.split("/").slice(0, 3).join("/")
+    }/.config/chromium/NativeMessagingHosts`;
+
+    writeFileSync(
+      `${chromeUserDataDir}/${host.name}.json`,
+      JSON.stringify(host, null, 2),
+    );
+
+    console.log(
+      `${host.name} Native Messaging host manifest written to ${chromeUserDataDir}/${host.name}.json`,
+    );
+  }
+} catch (e) {
+  console.log(e);
+}
+
+for (
+  const buildCache of [
+    "bun",
+    ".bun",
+    "deno",
+    "go",
+    "go-build",
+    "tinygo",
+    "wasmtime",
+    "zig",
+  ]
+) {
   const { resolve, promise } = Promise.withResolvers();
-  exec(compile, (error, stdout, stderr) => {
+  exec(`rm -rf /home/user/.cache/${buildCache}`, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec. error: ${error}`);
-      return;
+      return resolve();
     }
-    console.log(`Successfully compiled ${i} to ${host.name}.wasm`);
-    // console.log(`stdout: ${stdout}`);
-    // console.error(`stderr: ${stderr}`);
+    // console.log(`Successfully removed ${buildCache} cache`);
     resolve();
   });
-  await promise;
-  if (host.name !== "nm_javy_node_wasi") {
-    const shellscript = host.name === "nm_qjs_wasi"
-      ? `#!/bin/bash
-exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
-        readFileSync("./nm_qjs_wasi_min.js", "utf8")
-      }'`
-      : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
-    writeFileSync(`${host.name}.sh`, shellscript);
-  }
-  chmodSync(host.path, 0o764);
-
-  console.log(`${host.path} set to executable.`);
-
-  writeFileSync(`${host.name}.json`, JSON.stringify(host, null, 2));
-  // https://chromium.googlesource.com/chromium/src.git/+/HEAD/docs/user_data_dir.md
-
-  const chromeUserDataDir = `${
-    dirname.split("/").slice(0, 3).join("/")
-  }/.config/chromium/NativeMessagingHosts`;
-
-  writeFileSync(
-    `${chromeUserDataDir}/${host.name}.json`,
-    JSON.stringify(host, null, 2),
-  );
-
-  console.log(
-    `${host.name} Native Messaging host manifest written to ${chromeUserDataDir}/${host.name}.json`,
-  );
 }
+
+const { resolve, promise } = Promise.withResolvers();
+exec(`rm -rf ./node_modules`, (error, stdout, stderr) => {
+  if (error) {
+    console.error(`exec. error: ${error}`);
+    return resolve();
+  }
+  console.log(`Successfully removed ./node_modules`);
+  resolve();
+});
 
 console.log(`
 Launch chrome with \`chrome --load-extension=${dirname}\` and navigate to URL \`chrome-extension://${id}/index.html\`, open DevTools`);
