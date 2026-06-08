@@ -128,11 +128,6 @@ try {
     host.type = "stdio";
     host.allowed_origins = [];
     host.allowed_origins.push(`chrome-extension://${id}/`);
-    host.allowed_origins.push(
-      `chrome-extension://${await generateIdForPath(
-        `${dirname.slice(0, dirname.lastIndexOf("/"))}/tab`,
-      )}/`,
-    );
 
     const { resolve, promise } = Promise.withResolvers();
     exec(compile, (error, stdout, stderr) => {
@@ -153,7 +148,7 @@ try {
 exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
           readFileSync("./nm_qjs_wasi_min.js", "utf8")
         }'`
-        : `#!/usr/bin/env -S /home/user/bin/${runtime} ${dirname}/${host.name}.wasm`;
+        : `#!/usr/bin/env -S /home/user/bin/${runtime} ${host.name === "nm_js2wasm" ? "-W gc=y,function-references=y,tail-call=y,exceptions=y" : ""} ${dirname}/${host.name}.wasm`;
       writeFileSync(`${host.name}.sh`, shellscript);
     }
     chmodSync(host.path, 0o764);
@@ -179,39 +174,6 @@ exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -
 } catch (e) {
   console.log(e);
 }
-
-for (
-  const buildCache of [
-    "bun",
-    ".bun",
-    "deno",
-    "go",
-    "go-build",
-    "tinygo",
-    "wasmtime",
-    "zig",
-  ]
-) {
-  const { resolve, promise } = Promise.withResolvers();
-  exec(`rm -rf /home/user/.cache/${buildCache}`, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec. error: ${error}`);
-      return resolve();
-    }
-    // console.log(`Successfully removed ${buildCache} cache`);
-    resolve();
-  });
-}
-
-const { resolve, promise } = Promise.withResolvers();
-exec(`rm -rf ./node_modules`, (error, stdout, stderr) => {
-  if (error) {
-    console.error(`exec. error: ${error}`);
-    return resolve();
-  }
-  console.log(`Successfully removed ./node_modules`);
-  resolve();
-});
 
 console.log(`
 Launch chrome with \`chrome --load-extension=${dirname}\` and navigate to URL \`chrome-extension://${id}/index.html\`, open DevTools`);
