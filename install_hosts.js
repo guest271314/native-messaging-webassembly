@@ -148,7 +148,13 @@ try {
 exec /home/user/bin/wasmtime run --dir=. /home/user/bin/qjs-wasi.wasm --std -m -e '${
           readFileSync("./nm_qjs_wasi_min.js", "utf8")
         }'`
-        : `#!/usr/bin/env -S /home/user/bin/${runtime} ${host.name === "nm_js2wasm" ? "-W gc=y,function-references=y,tail-call=y,exceptions=y" : ""} ${dirname}/${host.name}.wasm`;
+        : `#!/usr/bin/env -S /home/user/bin/${runtime} ${
+          host.name === "nm_js2wasm"
+            ? "-W gc=y,function-references=y,tail-call=y,exceptions=y"
+            : ""
+        } ${dirname}/${
+          host.name + (host.name === "nm_js2wasm" ? ".js" : "")
+        }.wasm`;
       writeFileSync(`${host.name}.sh`, shellscript);
     }
     chmodSync(host.path, 0o764);
