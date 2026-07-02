@@ -16,7 +16,7 @@ Compilers and runtimes used:
 - `bun` for fetching packages from NPM and bundling and minifiying source code
 - `node` for `node:wasi` with WebAssembly JavaScript API in `nm_javy_node_wasi.js` and passing `.wasm` file to `nm_node_wasi.js`, e.g., `node nm_node_wasi.js nm_assemblyscript.wasm`, `node nm_node_wasi.js nm_tinygo_wasi.wasm`, et al.
 - `wasi.js` implements a runtime agnostic WASI Preview1 for `deno` (which currently stubs `node:wasi` module), `node`, and `bun`
-- `loopdive/js2`'s (`js2wasm`) to compile `nm_js2wasm.js` to WASM GC
+- `loopdive/js2`'s (`js2wasm`) to compile `nm_js2wasm_wasi_p1.js` to WASM GC
 - `componentize-js` for `nm_componentize_js.js`
 - `componentize-qjs` for `nm_componentize_qjs.js`
   

@@ -89,8 +89,8 @@ const hosts = {
     "description": "js2wasm Native Messaging host",
     "compile": `
        bun install --trust https://github.com/loopdive/js2 && \
-       bun build ./node_modules/@loopdive/js2/examples/native-messaging/nm_js2wasm.ts --target=node --outfile=nm_js2wasm.js && \
-       bun ./node_modules/@loopdive/js2/src/cli.ts nm_js2wasm.js --wit --target wasi -o .
+       bun build ./node_modules/@loopdive/js2/examples/native-messaging/nm_js2wasm_wasi_p1.ts --no-bundle --outfile=nm_js2wasm_wasi_p1.js && \
+       bun ./node_modules/@loopdive/js2/src/cli.ts nm_js2wasm_wasi_p1.js --wit --target wasi -o .
       `,
   },
   "nm_rust_wasi": {
