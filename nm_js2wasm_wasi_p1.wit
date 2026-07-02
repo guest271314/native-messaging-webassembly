@@ -1,0 +1,10 @@
+package js2wasm:nm-js2wasm-wasi-p1;
+
+world module {
+  /// Core import: wasi_snapshot_preview1.fd_write
+  import fd-write: func(fd: s32, iovs: s32, iovs-len: s32, nwritten: s32) -> s32;
+  /// Core import: wasi_snapshot_preview1.fd_read
+  import fd-read: func(fd: s32, iovs: s32, iovs-len: s32, nread: s32) -> s32;
+
+  export main: func();
+}
