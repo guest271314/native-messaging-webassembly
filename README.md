@@ -19,6 +19,7 @@ Compilers and runtimes used:
 - `loopdive/js2`'s (`js2wasm`) to compile `nm_js2wasm_wasi_p1.js` to WASM GC
 - `componentize-js` for `nm_componentize_js.js`
 - `componentize-qjs` for `nm_componentize_qjs.js`
+- `ldc2` for `nm_d.d`
   
 ### Compile and install programmatically
 
